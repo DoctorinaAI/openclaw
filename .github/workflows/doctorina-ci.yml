@@ -5,8 +5,8 @@
 # upstream tags: it fails loudly if the Meet line reappears or the hint line is lost.
 name: doctorina-ci
 on:
+  # pull_request only: running on push AND pull_request fired this gate twice per commit on PRs.
   pull_request:
-  push:
 jobs:
   patch-invariants:
     runs-on: ubuntu-latest

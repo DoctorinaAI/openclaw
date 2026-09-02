@@ -1,0 +1,41 @@
+# Doctorina patch-invariants gate.
+# This is the ONLY CI on the DoctorinaAI/openclaw patch-fork. Upstream release/CI
+# workflows were removed; they are irrelevant to a single-line patch fork.
+# This gate guards the Doctorina browser-tool patch across future rebases onto new
+# upstream tags: it fails loudly if the Meet line reappears or the hint line is lost.
+name: doctorina-ci
+on:
+  pull_request:
+  push:
+jobs:
+  patch-invariants:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Assert Doctorina browser-tool patch invariants
+        run: |
+          set -euo pipefail
+          F1="extensions/browser/plugin-registration.ts"
+          F2="extensions/browser/src/browser-tool.ts"
+          MEET=", or Google Meet flows"
+          HINT="use the bundled browser-automation skill"
+          fail=0
+          for f in "$F1" "$F2"; do
+            if [ ! -f "$f" ]; then
+              echo "MISSING FILE: $f"; fail=1; continue
+            fi
+            if grep -qF "$MEET" "$f"; then
+              echo "REGRESSION: Meet string present in $f (patch lost)"; fail=1
+            else
+              echo "OK: Meet string absent in $f"
+            fi
+            if grep -qF "$HINT" "$f"; then
+              echo "OK: hint string present in $f"
+            else
+              echo "REGRESSION: hint string missing in $f"; fail=1
+            fi
+          done
+          if [ "$fail" -ne 0 ]; then
+            echo "Patch-invariants gate FAILED"; exit 1
+          fi
+          echo "Patch-invariants gate PASSED"
